@@ -1,18 +1,16 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import Footer from '../../components/Footer/Footer';
-import Banner from '../../components/Banner';
 import NavBar from '../../components/Navigation/NavBar';
 import DashboardOne from '../../components/Dashboards/Dashboard-One'
 import DashboardTwo from '../../components/Dashboards/Dashboard-Two'
-import { gql, useQuery, useMutation } from '@apollo/client';
-import LearnerAccess from '../../components/LearnerAccess/LearnerAccess';
-import FeaturedContentComp from '../../components/FeaturedContent/FeaturedContentComp';
-import { HydratedContentItem } from '@thoughtindustries/content';
+import { gql, useQuery, useMutation } from '@apollo/client'
+import type { GlobalTypes } from '@thoughtindustries/content';
 
 
 function Page() {
 
   const [panorama, setPanorama] = useState("")
+  const [content, setContent] = useState<GlobalTypes.Content[]>([])
 
   const query = gql`
   query {
@@ -25,20 +23,32 @@ function Page() {
         panorama
       }
     }
+
+    UserContentItems {
+      title
+      id
+    }
   }`
 
-    const { data } = useQuery(query);
+  const { data, error } = useQuery(query);
 
-    if (data) { 
-      const response = data.CurrentUser.client.name
-      useEffect(() => {
-          setPanorama(response)
-      }, [])
+  if (data) { 
+    const response = data.CurrentUser.client.name
+    console.log(data.UserContentItems)
+    useEffect(() => {
+        setPanorama(response)
+        setContent(data.UserContentItems)
+    }, [])
   } 
+
+  if (error) {
+    console.log("error:")
+    console.log(error)
+  }
 
   let dashboard;
   if (panorama == "Philly") {
-    dashboard = <DashboardOne/>
+    dashboard = <DashboardOne content={content}/>
   } else if (panorama == "Boston") {
     dashboard = <DashboardTwo/>
   }
@@ -49,12 +59,6 @@ function Page() {
         <NavBar />
           <div>
             { dashboard }
-            <FeaturedContentComp
-              onAddedToQueue={function (item: HydratedContentItem): Promise<boolean | void> {
-                throw new Error('Function not implemented.');
-              }}
-              numberOfContentItems={3}
-            />
           </div>
         <Footer />
       </div>
